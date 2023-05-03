@@ -132,42 +132,42 @@ func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
-//func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
-//vars := mux.Vars(r)
-//groupID := vars["id"]
+func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	groupID := vars["id"]
 
-//// find the group to be extended
-//var group *config.Config
-//for _, c := range s.Configurations {
-//	if c.GroupID == groupID {
-//		group = c
-//		break
-//	}
-//}
-//if group == nil {
-//	http.NotFound(w, r)
-//	return
-//}
+	// find the group to be extended
+	var group *config.Config
+	for _, c := range s.Configurations {
+		if c.GroupID == groupID {
+			group = c
+			break
+		}
+	}
+	if group == nil {
+		http.NotFound(w, r)
+		return
+	}
 
-//// decode the new configurations to be added to the group
-//var newConfigs []*config.Config
-//err := json.NewDecoder(r.Body).Decode(&newConfigs)
-//if err != nil {
-//	http.Error(w, err.Error(), http.StatusBadRequest)
-//return
-//}
+	//// decode the new configurations to be added to the group
+	var newConfigs []*config.Config
+	err := json.NewDecoder(r.Body).Decode(&newConfigs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
-//// add the new configurations to the group
-//for _, c := range newConfigs {
-//	c.GroupID = groupID
-//	group.Entries[c.ID] = c.Name
-//	s.Configurations = append(s.Configurations, c)
-//}
+	// add the new configurations to the group
+	for _, c := range newConfigs {
+		c.GroupID = groupID
+		group.Entries[c.ID] = c.Name
+		s.Configurations = append(s.Configurations, c)
+	}
 
-//w.Header().Set("Content-Type", "application/json")
-//err = json.NewEncoder(w).Encode(group)
-//if err != nil {
-//	http.Error(w, err.Error(), http.StatusInternalServerError)
-//	return
-//}
-//}
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(group)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}

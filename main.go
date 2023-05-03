@@ -32,7 +32,7 @@ func main() {
 	router.HandleFunc("/group", service.AddConfigurationGroup).Methods("POST")
 	router.HandleFunc("/group/{id}", service.GetConfigurationGroup).Methods("GET")
 	router.HandleFunc("/group/{id}", service.DeleteConfigurationGroup).Methods("DELETE")
-	//router.HandleFunc("/group/{id}/extend", service.ExtendConfigurationGroup).Methods("POST")
+	router.HandleFunc("/group/{id}/extend", service.ExtendConfigurationGroup).Methods("POST")
 
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
