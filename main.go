@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
+	service2 "github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -11,13 +13,26 @@ import (
 	"time"
 )
 
+var service *service2.Service
+
 func main() {
 
+	service := &service2.Service{
+		Configurations: []*config.Config{},
+	}
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	router := mux.NewRouter()
 	router.StrictSlash(true)
+
+	router.HandleFunc("/configurations", service.AddConfiguration).Methods("POST")
+	router.HandleFunc("/configurations/{id}", service.GetConfiguration).Methods("GET")
+	router.HandleFunc("/configurations/{id}", service.DeleteConfiguration).Methods("DELETE")
+	router.HandleFunc("/group", service.AddConfigurationGroup).Methods("POST")
+	router.HandleFunc("/group/{id}", service.GetConfigurationGroup).Methods("GET")
+	router.HandleFunc("/group/{id}", service.DeleteConfigurationGroup).Methods("DELETE")
+	router.HandleFunc("/group/{id}/extend", service.ExtendConfigurationGroup).Methods("POST")
 
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
