@@ -33,9 +33,10 @@ func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	version := vars["version"]
 
 	for _, config := range s.Configurations {
-		if config.ID == id {
+		if config.ID == id && config.Version == version {
 			w.Header().Set("Content-Type", "application/json")
 			err := json.NewEncoder(w).Encode(config)
 			if err != nil {
@@ -52,10 +53,11 @@ func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	version := vars["version"]
 
 	index := -1
 	for i, config := range s.Configurations {
-		if config.ID == id {
+		if config.ID == id && config.Version == version {
 			index = i
 			break
 		}
@@ -79,7 +81,10 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	s.Configurations = append(s.Configurations, configs...)
+	for _, c := range configs {
+		c.Version = "1"
+		s.Configurations = append(s.Configurations, c)
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	err = json.NewEncoder(w).Encode(configs)
@@ -92,30 +97,37 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	version := vars["version"]
 
+	var configs []*config.Config
 	for _, config := range s.Configurations {
-		if config.GroupID == id {
-			w.Header().Set("Content-Type", "application/json")
-			err := json.NewEncoder(w).Encode(config)
-			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
+		if config.GroupID == id && config.Version == version {
+			configs = append(configs, config)
 		}
 	}
 
-	http.NotFound(w, r)
+	if len(configs) == 0 {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(configs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
+	version := vars["version"]
 
 	newConfigs := make([]*config.Config, 0)
 	found := false
 
 	for _, config := range s.Configurations {
-		if config.GroupID == id {
+		if config.GroupID == id && config.Version == version {
 			found = true
 		} else {
 			newConfigs = append(newConfigs, config)
@@ -135,11 +147,12 @@ func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Reques
 func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupID := vars["id"]
+	version := vars["version"]
 
 	// find the group to be extended
 	var group *config.Config
 	for _, c := range s.Configurations {
-		if c.GroupID == groupID {
+		if c.GroupID == groupID && c.Version == version {
 			group = c
 			break
 		}
@@ -160,6 +173,7 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 	// add the new configurations to the group
 	for _, c := range newConfigs {
 		c.GroupID = groupID
+		c.Version = version
 		group.Entries[c.ID] = c.Name
 		s.Configurations = append(s.Configurations, c)
 	}
