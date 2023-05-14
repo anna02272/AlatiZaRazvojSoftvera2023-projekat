@@ -12,6 +12,15 @@ type Service struct {
 	Configurations []*config.Config          `json:"configurations"`
 }
 
+// swagger:route POST /configurations configurations addConfiguration
+//
+// Adds a new configuration to the list of configurations.
+//
+// Responses:
+//
+//	200: configResponse
+//	400: badRequestResponse
+//	500: internalServerErrorResponse
 func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 	var config config.Config
 	err := json.NewDecoder(r.Body).Decode(&config)
@@ -30,6 +39,15 @@ func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// swagger:route GET /configurations/{id}/{version} configurations getConfiguration
+//
+// Returns the configuration with the given ID and version.
+//
+// Responses:
+//
+//	200: configResponse
+//	404: notFoundResponse
+//	500: internalServerErrorResponse
 func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -50,6 +68,14 @@ func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	http.NotFound(w, r)
 }
 
+// swagger:route DELETE /configurations/{id}/{version} configurations deleteConfiguration
+//
+// Deletes the configuration with the given ID and version.
+//
+// Responses:
+//
+//	204: noContentResponse
+//	404: notFoundResponse
 func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -73,6 +99,15 @@ func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// swagger:route POST /configurations/ configurations addConfigurationGroup
+//
+// Adds a group of new configurations to the list of configurations.
+//
+// Responses:
+//
+//	200: configGroupResponse
+//	400: badRequestResponse
+//	500: internalServerErrorResponse
 func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	var configs []*config.Config
 	err := json.NewDecoder(r.Body).Decode(&configs)
@@ -94,6 +129,15 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// swagger:route GET /configurations/{id}/{version} configurations getConfigurationGroup
+//
+// Returns the group of configurations with the given ID and version.
+//
+// Responses:
+//
+//	200: configGroupResponse
+//	404: notFoundResponse
+//	500: internalServerErrorResponse
 func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -118,6 +162,14 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
+// swagger:route DELETE /configurations/{id}/{version} configurations deleteConfigurationGroup
+//
+// Deletes the group of configurations with the given ID and version.
+//
+// Responses:
+//
+//	204: noContentResponse
+//	404: notFoundResponse
 func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -144,6 +196,16 @@ func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Reques
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// swagger:route PUT /configurations/{id}/{version} configurations extendConfigurationGroup
+//
+// Extends the group of configurations with the given ID and version by adding new configurations.
+//
+// Responses:
+//
+//	200: configGroupResponse
+//	400: badRequestResponse
+//	404: notFoundResponse
+//	500: internalServerErrorResponse
 func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupID := vars["id"]

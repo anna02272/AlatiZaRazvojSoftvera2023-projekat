@@ -1,9 +1,22 @@
+// Config API
+//
+//	Title: Config API
+//
+//	Schemes: http
+//	Version: 0.0.1
+//	BasePath: /
+//
+//	Produces:
+//	  - application/json
+//
+// swagger:meta
 package main
 
 import (
 	"context"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	service2 "github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
@@ -33,6 +46,16 @@ func main() {
 	router.HandleFunc("/group/{id}/{version}", service.GetConfigurationGroup).Methods("GET")
 	router.HandleFunc("/group/{id}/{version}", service.DeleteConfigurationGroup).Methods("DELETE")
 	router.HandleFunc("/group/{id}/{version}/extend", service.ExtendConfigurationGroup).Methods("POST")
+
+	// SwaggerUI
+	optionsDevelopers := middleware.SwaggerUIOpts{SpecURL: "swagger.yaml"}
+	developerDocumentationHandler := middleware.SwaggerUI(optionsDevelopers, nil)
+	router.Handle("/docs", developerDocumentationHandler)
+
+	// ReDoc
+	// optionsShared := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	// sharedDocumentationHandler := middleware.Redoc(optionsShared, nil)
+	// router.Handle("/docs", sharedDocumentationHandler)
 
 	// start server
 	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
