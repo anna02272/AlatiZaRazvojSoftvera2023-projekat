@@ -46,6 +46,7 @@ func main() {
 	router.HandleFunc("/group/{id}/{version}", service.GetConfigurationGroup).Methods("GET")
 	router.HandleFunc("/group/{id}/{version}", service.DeleteConfigurationGroup).Methods("DELETE")
 	router.HandleFunc("/group/{id}/{version}/extend", service.ExtendConfigurationGroup).Methods("POST")
+	router.HandleFunc("/swagger.yaml", service.SwaggerHandler).Methods("GET")
 
 	// SwaggerUI
 	optionsDevelopers := middleware.SwaggerUIOpts{SpecURL: "swagger.yaml"}

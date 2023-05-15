@@ -195,17 +195,22 @@ func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Reques
 
 	w.WriteHeader(http.StatusNoContent)
 }
+func (s *Service) SwaggerHandler(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "./swagger.yaml")
+}
 
-// swagger:route PUT /configurations/{id}/{version} configurations extendConfigurationGroup
+// swagger:route PUT /configurations/{id}/{version} configurations ExtendConfigurationGroup
 //
 // Extends the group of configurations with the given ID and version by adding new configurations.
 //
+// This endpoint allows you to extend an existing configuration group by adding new configurations to it.
+//
 // Responses:
 //
-//	200: configGroupResponse
-//	400: badRequestResponse
-//	404: notFoundResponse
-//	500: internalServerErrorResponse
+//	200: configGroupResponse  // Successfully extended configuration group.
+//	400: badRequestResponse   // Invalid request or payload.
+//	404: notFoundResponse     // Configuration group not found.
+//	500: internalServerErrorResponse  // Internal server error occurred.
 func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	groupID := vars["id"]
@@ -246,4 +251,5 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 }
