@@ -4,10 +4,10 @@ info:
     title: Post API
     version: 0.0.1
 paths:
-    /post/:
+    /configurations/:
         post:
-            description: Add new post
-            operationId: createPost
+            description: Add new configuration
+            operationId: createConfigration
             parameters:
                 - description: 'name: body'
                   in: body
@@ -20,16 +20,16 @@ paths:
                     $ref: '#/responses/ResponsePost'
                 "400":
                     $ref: '#/responses/ErrorResponse'
-                "415":
+                "500":
                     $ref: '#/responses/ErrorResponse'
             tags:
                 - post
-    /post/{id}/:
+    /configurations/{id}/{version}:
         delete:
-            description: Delete post
-            operationId: deletePost
+            description: Delete configuration
+            operationId: deleteConfiguration
             parameters:
-                - description: Post ID
+                - description: Configuration ID
                   in: path
                   name: id
                   required: true
@@ -43,10 +43,10 @@ paths:
             tags:
                 - post
         get:
-            description: Get post by ID
-            operationId: getPostById
+            description: Get configuration by ID
+            operationId: getConfigurationById
             parameters:
-                - description: Post ID
+                - description: Configuration ID
                   in: path
                   name: id
                   required: true
@@ -57,15 +57,86 @@ paths:
                     $ref: '#/responses/ResponsePost'
                 "404":
                     $ref: '#/responses/ErrorResponse'
+                "500":
+                    $ref: '#/responses/ErrorResponse'
             tags:
                 - post
-    /posts/:
-        get:
-            description: Get all posts
-            operationId: getPosts
+    /group/:
+        post:
+            description: Add new configuration group
+            operationId: createConfigrationGroup
+            parameters:
+                - description: 'name: body'
+                  in: body
+                  name: body
+                  required: true
+                  schema: { }
+                  x-go-name: Body
             responses:
                 "200":
                     $ref: '#/responses/ResponsePost'
+                "400":
+                    $ref: '#/responses/ErrorResponse'
+                "500":
+                    $ref: '#/responses/ErrorResponse'
+            tags:
+                - post
+    /group/{id}/{version}:
+        delete:
+            description: Delete group
+            operationId: deleteGroup
+            parameters:
+                - description: Group ID
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                  x-go-name: Id
+            responses:
+                "204":
+                    $ref: '#/responses/NoContentResponse'
+                "404":
+                    $ref: '#/responses/ErrorResponse'
+            tags:
+                - post
+        get:
+            description: Get group by ID
+            operationId: getGroupById
+            parameters:
+                - description: Group ID
+                  in: path
+                  name: id
+                  required: true
+                  type: string
+                  x-go-name: Id
+            responses:
+                "200":
+                    $ref: '#/responses/ResponsePost'
+                "404":
+                    $ref: '#/responses/ErrorResponse'
+                "500":
+                    $ref: '#/responses/ErrorResponse'
+            tags:
+                - post
+    /group/{id}/{version}/extend:
+        post:
+            description: Extend configuration group
+            operationId: extendConfigurationGroup
+            parameters:
+                - description: 'name: body'
+                  in: body
+                  name: body
+                  descrition: Id of the configuration group to extend
+                  required: true
+                  schema: { }
+                  x-go-name: Body
+            responses:
+                "200":
+                    $ref: '#/responses/ResponsePost'
+                "400":
+                    $ref: '#/responses/ErrorResponse'
+                "404":
+                    $ref: '#/responses/ErrorResponse'
             tags:
                 - post
 produces:
