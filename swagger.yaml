@@ -7,7 +7,7 @@ info:
     title: Configuration API
     version: 0.0.1
 paths:
-    /configurations/:
+    /configurations:
         post:
             description: Add new configuration
             operationId: createConfigration
@@ -76,7 +76,7 @@ paths:
             tags:
                 - configuration
 
-    /group/:
+    /group:
         post:
             description: Add new configuration group
             operationId: createConfigrationGroup
