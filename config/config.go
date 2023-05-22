@@ -25,4 +25,8 @@ type Config struct {
 	// Version of the config
 	// in: string
 	Version string `json:"version"`
+
+	//List of labels of the config
+	//in: map[string]string
+	Labels map[string]string `json:"labels"`
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	"github.com/gorilla/mux"
 	"net/http"
+	"reflect"
 )
 
 type Service struct {
@@ -143,10 +144,29 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	id := vars["id"]
 	version := vars["version"]
 
+	var labels []*map[string]string
+	err := json.NewDecoder(r.Body).Decode(&labels)
+
+	//labels
+
 	var configs []*config.Config
 	for _, config := range s.Configurations {
+		var labelRes []*map[string]string
 		if config.GroupID == id && config.Version == version {
-			configs = append(configs, config)
+			for _, pair := range labels {
+				for key, value := range config.Labels {
+					label := map[string]string{key: value}
+					containsLabel := ContainsLabel(label, *pair)
+					if containsLabel {
+						labelRes = append(labelRes, &label)
+					}
+				}
+
+			}
+
+			if len(labelRes) == len(labels) {
+				configs = append(configs, config)
+			}
 		}
 	}
 
@@ -155,7 +175,7 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(configs)
+	err = json.NewEncoder(w).Encode(configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -252,4 +272,12 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+}
+
+func ContainsLabel(l1 map[string]string, label map[string]string) bool {
+	if reflect.DeepEqual(l1, label) {
+		return true
+	}
+
+	return false
 }
