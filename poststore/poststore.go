@@ -139,3 +139,14 @@ func (ps *PostStore) ExtendConfigurationGroup(groupID, version string, newConfig
 
 	return group, nil
 }
+func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labels string) ([]*config.Config, error) {
+	filteredGroups := []*config.Config{}
+
+	for _, group := range ps.Configurations {
+		if group.GroupID == id && group.Version == version && group.Labels == labels {
+			filteredGroups = append(filteredGroups, group)
+		}
+	}
+
+	return filteredGroups, nil
+}

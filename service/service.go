@@ -207,7 +207,7 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	for _, c := range newConfigs {
 		c.GroupID = groupID
 		c.Version = version
@@ -233,19 +233,14 @@ func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.
 	version := vars["version"]
 	labelString := vars["labels"]
 
-	filteredGroups := []*config.Config{}
-
-	for _, group := range s.Configurations {
-		if group.GroupID == id && group.Version == version {
-
-			if group.Labels == labelString {
-				filteredGroups = append(filteredGroups, group)
-			}
-		}
+	filteredGroups, err := s.PostStore.GetConfigurationGroupsByLabels(id, version, labelString)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	err := json.NewEncoder(w).Encode(filteredGroups)
+	err = json.NewEncoder(w).Encode(filteredGroups)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
