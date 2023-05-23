@@ -15,7 +15,8 @@ package main
 import (
 	"context"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
-	service2 "github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 	"log"
@@ -26,12 +27,16 @@ import (
 	"time"
 )
 
-var service *service2.Service
-
 func main() {
 
-	service := &service2.Service{
+	ps, err := poststore.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	service := &service.Service{
 		Configurations: []*config.Config{},
+		PostStore:      ps,
 	}
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
