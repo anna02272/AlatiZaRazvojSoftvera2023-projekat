@@ -144,47 +144,19 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	id := vars["id"]
 	version := vars["version"]
 
-	var labels []map[string]string
-	err := json.NewDecoder(r.Body).Decode(&labels)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	var configs []*config.Config
 	for _, config := range s.Configurations {
-		if config.GroupID == id && config.Version == version {
-			match := true
-			for _, label := range labels {
-				found := false
-				for key, value := range label {
-					if config.Labels[key] == value {
-						found = true
-						break
-					}
-				}
-				if !found {
-					match = false
-					break
-				}
+		if config.GroupID == id {
+			w.Header().Set("Content-Type", "application/json")
+			err := json.NewEncoder(w).Encode(config)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
-
-			if match && len(config.Labels) == len(labels) {
+			if config.GroupID == id && config.Version == version {
 				configs = append(configs, config)
 			}
 		}
-	}
-
-	if len(configs) == 0 {
-		http.NotFound(w, r)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	err = json.NewEncoder(w).Encode(configs)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
 	}
 }
 

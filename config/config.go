@@ -28,5 +28,5 @@ type Config struct {
 
 	//List of labels of the config
 	//in: map[string]string
-	Labels map[string]string `json:"labels"`
+	Labels string `json:"labels"`
 }
