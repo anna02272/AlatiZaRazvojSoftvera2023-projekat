@@ -6,7 +6,6 @@ import (
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
 	"github.com/gorilla/mux"
 	"net/http"
-	"strings"
 )
 
 type Service struct {
@@ -227,6 +226,15 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 
 }
 
+// swagger:route GET /groups/{id}/{version}/{labels} groups getConfigurationGroupsByLabels
+//
+// Returns the group of configurations with the given ID,version and labels.
+//
+// Responses:
+//
+//	200: configGroupResponse
+//	404: notFoundResponse
+//	500: internalServerErrorResponse
 func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	id := vars["id"]
@@ -245,29 +253,4 @@ func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-}
-
-func containsAllLabels(labels string, labelString string) bool {
-	if len(labelString) == 0 {
-		return true
-	}
-
-	labelPairs := strings.Split(labelString, ";")
-
-	for _, pair := range labelPairs {
-		label := strings.Split(pair, ":")
-		if len(label) != 2 {
-			continue
-		}
-
-		key := strings.TrimSpace(label[0])
-		value := strings.TrimSpace(label[1])
-
-		labelToSearch := key + ":" + value
-		if !strings.Contains(labels, labelToSearch) {
-			return false
-		}
-	}
-
-	return true
 }

@@ -122,6 +122,36 @@ paths:
           $ref: '#/responses/ErrorResponse'
       tags:
         - configuration group
+  /group/{id}/{version}/{labels}:
+    get:
+      description: Get configuration groups by labels
+      operationId: getConfigurationGroupsByLabels
+      parameters:
+        - description: Group ID
+          in: path
+          name: id
+          required: true
+          type: string
+          x-go-name: Id
+        - name: version
+          in: path
+          description: Configuration Group Version
+          required: true
+          type: string
+        - name: labels
+          in: path
+          description: Configuration Group Labels
+          required: true
+          type: string
+      responses:
+        "200":
+          $ref: '#/responses/ResponsePost'
+        "404":
+          $ref: '#/responses/ErrorResponse'
+        "500":
+          $ref: '#/responses/ErrorResponse'
+      tags:
+        - configuration group
     delete:
       description: Delete group
       operationId: deleteGroup
