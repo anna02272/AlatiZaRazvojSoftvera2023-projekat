@@ -5,7 +5,7 @@ import (
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	"github.com/gorilla/mux"
 	"net/http"
-	"reflect"
+	"strings"
 )
 
 type Service struct {
@@ -252,10 +252,52 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 
 }
 
-func ContainsLabel(l1 map[string]string, label map[string]string) bool {
-	if reflect.DeepEqual(l1, label) {
+func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id := vars["id"]
+	version := vars["version"]
+	labelString := vars["labels"]
+
+	filteredGroups := []*config.Config{}
+
+	for _, group := range s.Configurations {
+		if group.GroupID == id && group.Version == version {
+
+			if group.Labels == labelString {
+				filteredGroups = append(filteredGroups, group)
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	err := json.NewEncoder(w).Encode(filteredGroups)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func containsAllLabels(labels string, labelString string) bool {
+	if len(labelString) == 0 {
 		return true
 	}
 
-	return false
+	labelPairs := strings.Split(labelString, ";")
+
+	for _, pair := range labelPairs {
+		label := strings.Split(pair, ":")
+		if len(label) != 2 {
+			continue
+		}
+
+		key := strings.TrimSpace(label[0])
+		value := strings.TrimSpace(label[1])
+
+		labelToSearch := key + ":" + value
+		if !strings.Contains(labels, labelToSearch) {
+			return false
+		}
+	}
+
+	return true
 }
