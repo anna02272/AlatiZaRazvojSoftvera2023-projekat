@@ -1,6 +1,6 @@
 FROM golang:alpine AS build
 
-WORKDIR ./app
+WORKDIR /app
 
 # Copy the source code from the current directory to the working directory inside the container
 

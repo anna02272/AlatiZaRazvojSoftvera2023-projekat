@@ -152,6 +152,7 @@ paths:
           $ref: '#/responses/ErrorResponse'
       tags:
         - configuration group
+    /group/{id}/{version}:
     delete:
       description: Delete group
       operationId: deleteGroup
@@ -268,8 +269,6 @@ definitions:
       version:
         type: string
       labels:
-        type: object
-        additionalProperties:
-          type: string
+        type: string
 
 
