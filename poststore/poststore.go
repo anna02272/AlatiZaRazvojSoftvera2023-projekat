@@ -81,72 +81,120 @@ func (ps *PostStore) DeleteConfiguration(id, version string) error {
 	return nil
 }
 func (ps *PostStore) AddConfigurationGroup(configs []*config.Config) error {
+	kv := ps.cli.KV()
+
 	for _, c := range configs {
-		c.Version = "1"
+		data, err := json.Marshal(c)
+		if err != nil {
+			return err
+		}
+
+		key := "groups/" + c.GroupID + "/" + c.Version + "/" + c.ID
+		p := &api.KVPair{Key: key, Value: data}
+		_, err = kv.Put(p, nil)
+		if err != nil {
+			return err
+		}
+
 		ps.Configurations = append(ps.Configurations, c)
 	}
+
 	return nil
 }
 
 func (ps *PostStore) GetConfigurationGroup(id, version string) ([]*config.Config, error) {
-	var configs []*config.Config
-	for _, config := range ps.Configurations {
-		if config.GroupID == id && config.Version == version {
-			configs = append(configs, config)
-		}
+	kv := ps.cli.KV()
+
+	configs := make([]*config.Config, 0)
+
+	keyPrefix := "groups/" + id + "/" + version + "/"
+	pairs, _, err := kv.List(keyPrefix, nil)
+	if err != nil {
+		return nil, err
 	}
+
+	for _, pair := range pairs {
+		config := &config.Config{}
+		err := json.Unmarshal(pair.Value, config)
+		if err != nil {
+			return nil, err
+		}
+		configs = append(configs, config)
+	}
+
 	return configs, nil
 }
 
 func (ps *PostStore) DeleteConfigurationGroup(id, version string) error {
-	newConfigs := make([]*config.Config, 0)
-	found := false
+	kv := ps.cli.KV()
 
-	for _, config := range ps.Configurations {
-		if config.GroupID == id && config.Version == version {
-			found = true
-		} else {
-			newConfigs = append(newConfigs, config)
+	keyPrefix := "groups/" + id + "/" + version + "/"
+	_, err := kv.DeleteTree(keyPrefix, nil)
+	if err != nil {
+		return err
+	}
+
+	newConfigs := make([]*config.Config, 0)
+	for _, c := range ps.Configurations {
+		if c.GroupID != id || c.Version != version {
+			newConfigs = append(newConfigs, c)
 		}
 	}
-
-	if !found {
-		return fmt.Errorf("configuration group not found")
-	}
-
 	ps.Configurations = newConfigs
+
 	return nil
 }
 
-func (ps *PostStore) ExtendConfigurationGroup(groupID, version string, newConfigs []*config.Config) (*config.Config, error) {
-	var group *config.Config
-	for _, c := range ps.Configurations {
-		if c.GroupID == groupID && c.Version == version {
-			group = c
-			break
-		}
-	}
-	if group == nil {
-		return nil, fmt.Errorf("configuration group not found")
+func (ps *PostStore) ExtendConfigurationGroup(id, version string, newConfigs []*config.Config) error {
+	kv := ps.cli.KV()
+
+	// find the group to be extended
+	groupConfigs, err := ps.GetConfigurationGroup(id, version)
+	if err != nil {
+		return err
 	}
 
 	for _, c := range newConfigs {
-		c.GroupID = groupID
-		c.Version = version
-		group.Entries[c.ID] = c.Name
+		data, err := json.Marshal(c)
+		if err != nil {
+			return err
+		}
+
+		key := "groups/" + c.GroupID + "/" + c.Version + "/" + c.ID
+		p := &api.KVPair{Key: key, Value: data}
+		_, err = kv.Put(p, nil)
+		if err != nil {
+			return err
+		}
+
+		groupConfigs = append(groupConfigs, c)
 		ps.Configurations = append(ps.Configurations, c)
 	}
 
-	return group, nil
+	return nil
 }
-func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labels string) ([]*config.Config, error) {
-	filteredGroups := []*config.Config{}
 
-	for _, group := range ps.Configurations {
-		if group.GroupID == id && group.Version == version && group.Labels == labels {
-			filteredGroups = append(filteredGroups, group)
+func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString string) ([]*config.Config, error) {
+	kv := ps.cli.KV()
+
+	configs := make([]*config.Config, 0)
+
+	keyPrefix := "groups/" + id + "/" + version + "/"
+	pairs, _, err := kv.List(keyPrefix, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, pair := range pairs {
+		config := &config.Config{}
+		err := json.Unmarshal(pair.Value, config)
+		if err != nil {
+			return nil, err
+		}
+		if config.Labels == labelString {
+			configs = append(configs, config)
 		}
 	}
 
-	return filteredGroups, nil
+	return configs, nil
 }
