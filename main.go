@@ -15,10 +15,12 @@ package main
 import (
 	"context"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/metrics"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
 	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
@@ -44,15 +46,18 @@ func main() {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	router.HandleFunc("/configurations", service.AddConfiguration).Methods("POST")
-	router.HandleFunc("/configurations/{id}/{version}", service.GetConfiguration).Methods("GET")
-	router.HandleFunc("/configurations/{id}/{version}", service.DeleteConfiguration).Methods("DELETE")
-	router.HandleFunc("/group", service.AddConfigurationGroup).Methods("POST")
-	router.HandleFunc("/group/{id}/{version}", service.GetConfigurationGroup).Methods("GET")
-	router.HandleFunc("/group/{id}/{version}", service.DeleteConfigurationGroup).Methods("DELETE")
-	router.HandleFunc("/group/{id}/{version}/extend", service.ExtendConfigurationGroup).Methods("POST")
-	router.HandleFunc("/swagger.yaml", service.SwaggerHandler).Methods("GET")
-	router.HandleFunc("/group/{id}/{version}/{labels}", service.GetConfigurationGroupsByLabels).Methods("GET")
+	router.HandleFunc("/configurations", metrics.Count(service.AddConfiguration, "/configurations")).Methods("POST")
+	router.HandleFunc("/configurations/{id}/{version}", metrics.Count(service.GetConfiguration, "/configurations/{id}/{version}")).Methods("GET")
+	router.HandleFunc("/configurations/{id}/{version}", metrics.Count(service.DeleteConfiguration, "/configurations/{id}/{version}")).Methods("DELETE")
+	router.HandleFunc("/group", metrics.Count(service.AddConfigurationGroup, "/group")).Methods("POST")
+	router.HandleFunc("/group/{id}/{version}", metrics.Count(service.GetConfigurationGroup, "/group/{id}/{version}")).Methods("GET")
+	router.HandleFunc("/group/{id}/{version}", metrics.Count(service.DeleteConfigurationGroup, "/group/{id}/{version}")).Methods("DELETE")
+	router.HandleFunc("/group/{id}/{version}/extend", metrics.Count(service.ExtendConfigurationGroup, "/group/{id}/{version}/extend")).Methods("POST")
+	router.HandleFunc("/swagger.yaml", metrics.Count(service.SwaggerHandler, "/swagger.yaml")).Methods("GET")
+	router.HandleFunc("/group/{id}/{version}/{labels}", metrics.Count(service.GetConfigurationGroupsByLabels, "/group/{id}/{version}/{labels}")).Methods("GET")
+
+	// Prometheus metrics endpoint
+	router.Handle("/metrics", promhttp.Handler())
 
 	// SwaggerUI
 	optionsDevelopers := middleware.SwaggerUIOpts{SpecURL: "swagger.yaml"}
