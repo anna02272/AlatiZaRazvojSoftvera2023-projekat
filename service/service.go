@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
 )
@@ -23,12 +24,38 @@ type Service struct {
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
 func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
+	idempotencyKey := r.Header.Get("Idempotency-Key")
+	if idempotencyKey == "" {
+		http.Error(w, "Idempotency-Key header missing", http.StatusBadRequest)
+		return
+	}
+
+	existingConfig, err := s.PostStore.GetConfigurationByKey(idempotencyKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if existingConfig != nil {
+		w.Header().Set("Content-Type", "application/json")
+		err = json.NewEncoder(w).Encode(existingConfig)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
 	var config config.Config
-	err := json.NewDecoder(r.Body).Decode(&config)
+	err = json.NewDecoder(r.Body).Decode(&config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if config.ID == "" {
+		config.ID = uuid.New().String()
+	}
+	config.IdempotencyKey = idempotencyKey
 
 	err = s.PostStore.AddConfiguration(&config)
 	if err != nil {
@@ -104,11 +131,43 @@ func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
 func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	idempotencyKey := r.Header.Get("Idempotency-Key")
+	if idempotencyKey == "" {
+		http.Error(w, "Idempotency-Key header missing", http.StatusBadRequest)
+		return
+	}
+
+	// Check if a record already exists under the idempotency key
+	existingGroup, err := s.PostStore.GetConfigurationGroupByKey(idempotencyKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if existingGroup != nil {
+		w.Header().Set("Content-Type", "application/json")
+		err := json.NewEncoder(w).Encode(existingGroup)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		return
+	}
+
 	var configs []*config.Config
-	err := json.NewDecoder(r.Body).Decode(&configs)
+	err = json.NewDecoder(r.Body).Decode(&configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	for _, config := range configs {
+		if config.ID == "" {
+			config.ID = uuid.New().String()
+		}
+		if config.GroupID == "" {
+			config.GroupID = uuid.New().String()
+		}
+		config.IdempotencyKey = idempotencyKey
 	}
 
 	err = s.PostStore.AddConfigurationGroup(configs)

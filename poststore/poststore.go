@@ -38,6 +38,7 @@ func (ps *PostStore) AddConfiguration(config *config.Config) error {
 	}
 
 	key := "configurations/" + config.ID + "/" + config.Version
+
 	p := &api.KVPair{Key: key, Value: data}
 	_, err = kv.Put(p, nil)
 	if err != nil {
@@ -194,6 +195,51 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString str
 		if config.Labels == labelString {
 			configs = append(configs, config)
 		}
+	}
+
+	return configs, nil
+}
+func (ps *PostStore) GetConfigurationByKey(key string) (*config.Config, error) {
+	kv := ps.cli.KV()
+
+	pair, _, err := kv.Get(key, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if pair == nil {
+		return nil, nil
+	}
+
+	var config config.Config
+	err = json.Unmarshal(pair.Value, &config)
+	if err != nil {
+		return nil, err
+	}
+
+	return &config, nil
+}
+
+func (ps *PostStore) GetConfigurationGroupByKey(key string) ([]*config.Config, error) {
+	kv := ps.cli.KV()
+
+	pairs, _, err := kv.List(key, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(pairs) == 0 {
+		return nil, nil
+	}
+
+	var configs []*config.Config
+	for _, pair := range pairs {
+		var config config.Config
+		err = json.Unmarshal(pair.Value, &config)
+		if err != nil {
+			return nil, err
+		}
+		configs = append(configs, &config)
 	}
 
 	return configs, nil

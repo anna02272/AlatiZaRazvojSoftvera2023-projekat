@@ -29,4 +29,8 @@ type Config struct {
 	//List of labels of the config
 	//in: map[string]string
 	Labels string `json:"labels"`
+
+	// Idempotency key associated with the configuration
+	// in: string
+	IdempotencyKey string `json:"idempotency_key"`
 }
