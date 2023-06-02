@@ -1,7 +1,6 @@
 package service
 
 import (
-	"context"
 	"encoding/json"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
@@ -26,7 +25,8 @@ type Service struct {
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
 
-func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
 
@@ -92,7 +92,8 @@ func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r
 //	200: configResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Get")
 	defer span.Finish()
 
@@ -124,7 +125,8 @@ func (s *Service) GetConfiguration(ctx context.Context, w http.ResponseWriter, r
 //
 //	204: noContentResponse
 //	404: notFoundResponse
-func (s *Service) DeleteConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Delete")
 	defer span.Finish()
 	vars := mux.Vars(r)
@@ -150,7 +152,8 @@ func (s *Service) DeleteConfiguration(ctx context.Context, w http.ResponseWriter
 //	200: configGroupResponse
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
-func (s *Service) AddConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
 
@@ -220,7 +223,8 @@ func (s *Service) AddConfigurationGroup(ctx context.Context, w http.ResponseWrit
 //	200: configGroupResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Get")
 	defer span.Finish()
 
@@ -252,7 +256,8 @@ func (s *Service) GetConfigurationGroup(ctx context.Context, w http.ResponseWrit
 //
 //	204: noContentResponse
 //	404: notFoundResponse
-func (s *Service) DeleteConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Delete")
 	defer span.Finish()
 
@@ -285,7 +290,8 @@ func (s *Service) SwaggerHandler(w http.ResponseWriter, r *http.Request) {
 //	400: badRequestResponse   // Invalid request or payload.
 //	404: notFoundResponse     // Configuration group not found.
 //	500: internalServerErrorResponse  // Internal server error occurred.
-func (s *Service) ExtendConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
 
@@ -337,7 +343,8 @@ func (s *Service) ExtendConfigurationGroup(ctx context.Context, w http.ResponseW
 //	200: configGroupResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfigurationGroupsByLabels(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
 	span := tracer.StartSpanFromContext(ctx, "Get")
 	defer span.Finish()
 
