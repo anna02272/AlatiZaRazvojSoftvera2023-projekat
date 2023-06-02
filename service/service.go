@@ -25,9 +25,17 @@ type Service struct {
 //	200: configResponse
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
+
 func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
+
+	var config config.Config
+	err := json.NewDecoder(r.Body).Decode(&config)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 	if idempotencyKey == "" {
@@ -35,27 +43,15 @@ func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r
 		return
 	}
 
-	existingConfig, err := s.PostStore.GetConfigurationByKey(ctx, idempotencyKey)
+	exists, err := s.PostStore.CheckIdempotencyKey(ctx, idempotencyKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		tracer.LogError(span, err)
 		return
 	}
-	if existingConfig != nil {
-		w.Header().Set("Content-Type", "application/json")
-		err = json.NewEncoder(w).Encode(existingConfig)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			tracer.LogError(span, err)
-			return
-		}
-		return
-	}
 
-	var config config.Config
-	err = json.NewDecoder(r.Body).Decode(&config)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if exists {
+		w.WriteHeader(http.StatusCreated)
 		return
 	}
 
@@ -67,6 +63,14 @@ func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r
 	err = s.PostStore.AddConfiguration(ctx, &config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
+		return
+	}
+
+	err = s.PostStore.SaveIdempotencyKey(ctx, idempotencyKey)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -74,6 +78,7 @@ func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r
 	err = json.NewEncoder(w).Encode(config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 }
@@ -149,34 +154,30 @@ func (s *Service) AddConfigurationGroup(ctx context.Context, w http.ResponseWrit
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
 
+	var configs []*config.Config
+	err := json.NewDecoder(r.Body).Decode(&configs)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 	if idempotencyKey == "" {
 		http.Error(w, "Idempotency-Key header missing", http.StatusBadRequest)
+		tracer.LogError(span, err)
 		return
 	}
 
-	// Check if a record already exists under the idempotency key
-	existingGroup, err := s.PostStore.GetConfigurationGroupByKey(ctx, idempotencyKey)
+	exists, err := s.PostStore.CheckIdempotencyKey(ctx, idempotencyKey)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if existingGroup != nil {
-		w.Header().Set("Content-Type", "application/json")
-		err := json.NewEncoder(w).Encode(existingGroup)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			tracer.LogError(span, err)
-			return
-		}
+		tracer.LogError(span, err)
 		return
 	}
 
-	var configs []*config.Config
-	err = json.NewDecoder(r.Body).Decode(&configs)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		tracer.LogError(span, err)
+	if exists {
+		w.WriteHeader(http.StatusCreated)
 		return
 	}
 
@@ -184,13 +185,17 @@ func (s *Service) AddConfigurationGroup(ctx context.Context, w http.ResponseWrit
 		if config.ID == "" {
 			config.ID = uuid.New().String()
 		}
-		if config.GroupID == "" {
-			config.GroupID = uuid.New().String()
-		}
 		config.IdempotencyKey = idempotencyKey
+
+		err = s.PostStore.AddConfigurationGroup(ctx, config)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			tracer.LogError(span, err)
+			return
+		}
 	}
 
-	err = s.PostStore.AddConfigurationGroup(ctx, configs)
+	err = s.PostStore.SaveIdempotencyKey(ctx, idempotencyKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		tracer.LogError(span, err)

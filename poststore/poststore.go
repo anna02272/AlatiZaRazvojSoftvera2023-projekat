@@ -43,7 +43,6 @@ func (ps *PostStore) AddConfiguration(ctx context.Context, config *config.Config
 	}
 
 	key := "configurations/" + config.ID + "/" + config.Version
-
 	p := &api.KVPair{Key: key, Value: data}
 	_, err = kv.Put(p, nil)
 	if err != nil {
@@ -96,28 +95,25 @@ func (ps *PostStore) DeleteConfiguration(ctx context.Context, id, version string
 
 	return nil
 }
-func (ps *PostStore) AddConfigurationGroup(ctx context.Context, configs []*config.Config) error {
+
+func (ps *PostStore) AddConfigurationGroup(ctx context.Context, config *config.Config) error {
 	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
 
 	kv := ps.cli.KV()
 
-	for _, c := range configs {
-		data, err := json.Marshal(c)
-		if err != nil {
-			tracer.LogError(span, err)
-			return err
-		}
+	data, err := json.Marshal(config)
+	if err != nil {
+		tracer.LogError(span, err)
+		return err
+	}
 
-		key := "groups/" + c.GroupID + "/" + c.Version + "/" + c.ID
-		p := &api.KVPair{Key: key, Value: data}
-		_, err = kv.Put(p, nil)
-		if err != nil {
-			tracer.LogError(span, err)
-			return err
-		}
-
-		ps.Configurations = append(ps.Configurations, c)
+	key := "groups/" + config.GroupID + "/" + config.Version
+	p := &api.KVPair{Key: key, Value: data}
+	_, err = kv.Put(p, nil)
+	if err != nil {
+		tracer.LogError(span, err)
+		return err
 	}
 
 	return nil
@@ -131,7 +127,7 @@ func (ps *PostStore) GetConfigurationGroup(ctx context.Context, id, version stri
 
 	configs := make([]*config.Config, 0)
 
-	keyPrefix := "groups/" + id + "/" + version + "/"
+	keyPrefix := "groups/" + id + "/" + version
 	pairs, _, err := kv.List(keyPrefix, nil)
 	if err != nil {
 		tracer.LogError(span, err)
@@ -157,7 +153,7 @@ func (ps *PostStore) DeleteConfigurationGroup(ctx context.Context, id, version s
 
 	kv := ps.cli.KV()
 
-	keyPrefix := "groups/" + id + "/" + version + "/"
+	keyPrefix := "groups/" + id + "/" + version
 	_, err := kv.DeleteTree(keyPrefix, nil)
 	if err != nil {
 		tracer.LogError(span, err)
@@ -218,7 +214,7 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(ctx context.Context, id, ver
 
 	configs := make([]*config.Config, 0)
 
-	keyPrefix := "groups/" + id + "/" + version + "/"
+	keyPrefix := "groups/" + id + "/" + version
 	pairs, _, err := kv.List(keyPrefix, nil)
 	if err != nil {
 		tracer.LogError(span, err)
@@ -239,58 +235,37 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(ctx context.Context, id, ver
 
 	return configs, nil
 }
-func (ps *PostStore) GetConfigurationByKey(ctx context.Context, key string) (*config.Config, error) {
+
+func (ps *PostStore) CheckIdempotencyKey(ctx context.Context, idempotencyKey string) (bool, error) {
 	span := tracer.StartSpanFromContext(ctx, "Get")
 	defer span.Finish()
-
 	kv := ps.cli.KV()
 
+	key := "idempotency/" + idempotencyKey
 	pair, _, err := kv.Get(key, nil)
 	if err != nil {
 		tracer.LogError(span, err)
-		return nil, err
+		return false, err
+	}
+	if pair != nil {
+		return true, nil
 	}
 
-	if pair == nil {
-		return nil, nil
-	}
-
-	var config config.Config
-	err = json.Unmarshal(pair.Value, &config)
-	if err != nil {
-		tracer.LogError(span, err)
-		return nil, err
-	}
-
-	return &config, nil
+	return false, nil
 }
 
-func (ps *PostStore) GetConfigurationGroupByKey(ctx context.Context, key string) ([]*config.Config, error) {
-	span := tracer.StartSpanFromContext(ctx, "Get")
+func (ps *PostStore) SaveIdempotencyKey(ctx context.Context, idempotencyKey string) error {
+	span := tracer.StartSpanFromContext(ctx, "Post")
 	defer span.Finish()
-
 	kv := ps.cli.KV()
 
-	pairs, _, err := kv.List(key, nil)
+	key := "idempotency/" + idempotencyKey
+	p := &api.KVPair{Key: key, Value: []byte{}}
+	_, err := kv.Put(p, nil)
 	if err != nil {
 		tracer.LogError(span, err)
-		return nil, err
+		return err
 	}
 
-	if len(pairs) == 0 {
-		return nil, nil
-	}
-
-	var configs []*config.Config
-	for _, pair := range pairs {
-		var config config.Config
-		err = json.Unmarshal(pair.Value, &config)
-		if err != nil {
-			tracer.LogError(span, err)
-			return nil, err
-		}
-		configs = append(configs, &config)
-	}
-
-	return configs, nil
+	return nil
 }
