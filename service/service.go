@@ -1,9 +1,11 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
+	tracer "github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/tracer"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -23,16 +25,20 @@ type Service struct {
 //	200: configResponse
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
-func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
+func (s *Service) AddConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
+
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 	if idempotencyKey == "" {
 		http.Error(w, "Idempotency-Key header missing", http.StatusBadRequest)
 		return
 	}
 
-	existingConfig, err := s.PostStore.GetConfigurationByKey(idempotencyKey)
+	existingConfig, err := s.PostStore.GetConfigurationByKey(ctx, idempotencyKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 	if existingConfig != nil {
@@ -40,6 +46,7 @@ func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 		err = json.NewEncoder(w).Encode(existingConfig)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			tracer.LogError(span, err)
 			return
 		}
 		return
@@ -57,7 +64,7 @@ func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 	}
 	config.IdempotencyKey = idempotencyKey
 
-	err = s.PostStore.AddConfiguration(&config)
+	err = s.PostStore.AddConfiguration(ctx, &config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -80,14 +87,18 @@ func (s *Service) AddConfiguration(w http.ResponseWriter, r *http.Request) {
 //	200: configResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	version := vars["version"]
 
-	config, err := s.PostStore.GetConfiguration(id, version)
+	config, err := s.PostStore.GetConfiguration(ctx, id, version)
 	if err != nil {
 		http.NotFound(w, r)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -95,6 +106,7 @@ func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 	err = json.NewEncoder(w).Encode(config)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 }
@@ -107,14 +119,17 @@ func (s *Service) GetConfiguration(w http.ResponseWriter, r *http.Request) {
 //
 //	204: noContentResponse
 //	404: notFoundResponse
-func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteConfiguration(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Delete")
+	defer span.Finish()
 	vars := mux.Vars(r)
 	id := vars["id"]
 	version := vars["version"]
 
-	err := s.PostStore.DeleteConfiguration(id, version)
+	err := s.PostStore.DeleteConfiguration(ctx, id, version)
 	if err != nil {
 		http.NotFound(w, r)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -130,7 +145,10 @@ func (s *Service) DeleteConfiguration(w http.ResponseWriter, r *http.Request) {
 //	200: configGroupResponse
 //	400: badRequestResponse
 //	500: internalServerErrorResponse
-func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+func (s *Service) AddConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
+
 	idempotencyKey := r.Header.Get("Idempotency-Key")
 	if idempotencyKey == "" {
 		http.Error(w, "Idempotency-Key header missing", http.StatusBadRequest)
@@ -138,7 +156,7 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// Check if a record already exists under the idempotency key
-	existingGroup, err := s.PostStore.GetConfigurationGroupByKey(idempotencyKey)
+	existingGroup, err := s.PostStore.GetConfigurationGroupByKey(ctx, idempotencyKey)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -148,6 +166,7 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 		err := json.NewEncoder(w).Encode(existingGroup)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			tracer.LogError(span, err)
 			return
 		}
 		return
@@ -157,6 +176,7 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	err = json.NewDecoder(r.Body).Decode(&configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -170,9 +190,10 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 		config.IdempotencyKey = idempotencyKey
 	}
 
-	err = s.PostStore.AddConfigurationGroup(configs)
+	err = s.PostStore.AddConfigurationGroup(ctx, configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -180,6 +201,7 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	err = json.NewEncoder(w).Encode(configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 }
@@ -193,14 +215,18 @@ func (s *Service) AddConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 //	200: configGroupResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	version := vars["version"]
 
-	configs, err := s.PostStore.GetConfigurationGroup(id, version)
+	configs, err := s.PostStore.GetConfigurationGroup(ctx, id, version)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -208,6 +234,7 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 	err = json.NewEncoder(w).Encode(configs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 }
@@ -220,14 +247,18 @@ func (s *Service) GetConfigurationGroup(w http.ResponseWriter, r *http.Request) 
 //
 //	204: noContentResponse
 //	404: notFoundResponse
-func (s *Service) DeleteConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+func (s *Service) DeleteConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Delete")
+	defer span.Finish()
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	version := vars["version"]
 
-	err := s.PostStore.DeleteConfigurationGroup(id, version)
+	err := s.PostStore.DeleteConfigurationGroup(ctx, id, version)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -249,29 +280,35 @@ func (s *Service) SwaggerHandler(w http.ResponseWriter, r *http.Request) {
 //	400: badRequestResponse   // Invalid request or payload.
 //	404: notFoundResponse     // Configuration group not found.
 //	500: internalServerErrorResponse  // Internal server error occurred.
-func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Request) {
+func (s *Service) ExtendConfigurationGroup(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
+
 	vars := mux.Vars(r)
 	groupID := vars["id"]
 	version := vars["version"]
 
-	group, err := s.PostStore.GetConfigurationGroup(groupID, version)
+	group, err := s.PostStore.GetConfigurationGroup(ctx, groupID, version)
 	if err != nil {
 		http.NotFound(w, r)
+		tracer.LogError(span, err)
 		return
 	}
 	var newConfigs []*config.Config
 	err = json.NewDecoder(r.Body).Decode(&newConfigs)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		tracer.LogError(span, err)
 		return
 	}
 
 	for _, c := range newConfigs {
 		c.GroupID = groupID
 		c.Version = version
-		err := s.PostStore.AddConfiguration(c)
+		err := s.PostStore.AddConfiguration(ctx, c)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
+			tracer.LogError(span, err)
 			return
 		}
 	}
@@ -280,6 +317,7 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 	err = json.NewEncoder(w).Encode(group)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -294,15 +332,19 @@ func (s *Service) ExtendConfigurationGroup(w http.ResponseWriter, r *http.Reques
 //	200: configGroupResponse
 //	404: notFoundResponse
 //	500: internalServerErrorResponse
-func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.Request) {
+func (s *Service) GetConfigurationGroupsByLabels(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	vars := mux.Vars(r)
 	id := vars["id"]
 	version := vars["version"]
 	labelString := vars["labels"]
 
-	filteredGroups, err := s.PostStore.GetConfigurationGroupsByLabels(id, version, labelString)
+	filteredGroups, err := s.PostStore.GetConfigurationGroupsByLabels(ctx, id, version, labelString)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 
@@ -310,6 +352,7 @@ func (s *Service) GetConfigurationGroupsByLabels(w http.ResponseWriter, r *http.
 	err = json.NewEncoder(w).Encode(filteredGroups)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		tracer.LogError(span, err)
 		return
 	}
 }

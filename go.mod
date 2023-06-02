@@ -7,6 +7,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/hashicorp/consul/api v1.3.0
+	github.com/milossimic/gorest v0.0.0-20220602155816-1f6bab77093c
 	github.com/opentracing/opentracing-go v1.2.0
 	github.com/prometheus/client_golang v1.15.1
 )
@@ -15,9 +16,7 @@ require (
 	github.com/HdrHistogram/hdrhistogram-go v1.1.2 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	go.uber.org/atomic v1.5.0 // indirect
-	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/tools v0.0.0-20200103221440-774c71fcf114 // indirect
+	go.uber.org/atomic v1.7.0 // indirect
 )
 
 require (

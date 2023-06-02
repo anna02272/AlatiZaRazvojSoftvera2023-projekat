@@ -1,36 +1,23 @@
-// Config API
-//
-//	Title: Config API
-//
-//	Schemes: http
-//	Version: 0.0.1
-//	BasePath: /
-//
-//	Produces:
-//	  - application/json
-//
-// swagger:meta
 package main
 
 import (
 	"context"
-	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
-	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/metrics"
-	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/service"
-	"github.com/go-openapi/runtime/middleware"
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/metrics"
+	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/poststore"
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
-
 	ps, err := poststore.New()
 	if err != nil {
 		log.Fatal(err)
@@ -40,6 +27,7 @@ func main() {
 		Configurations: []*config.Config{},
 		PostStore:      ps,
 	}
+
 	quit := make(chan os.Signal)
 	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
@@ -59,18 +47,12 @@ func main() {
 	// Prometheus metrics endpoint
 	router.Handle("/metrics", promhttp.Handler())
 
-	// SwaggerUI
-	optionsDevelopers := middleware.SwaggerUIOpts{SpecURL: "swagger.yaml"}
-	developerDocumentationHandler := middleware.SwaggerUI(optionsDevelopers, nil)
-	router.Handle("/docs", developerDocumentationHandler)
-
-	// ReDoc
-	// optionsShared := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
-	// sharedDocumentationHandler := middleware.Redoc(optionsShared, nil)
-	// router.Handle("/docs", sharedDocumentationHandler)
-
 	// start server
-	srv := &http.Server{Addr: "0.0.0.0:8000", Handler: router}
+	srv := &http.Server{
+		Addr:    "0.0.0.0:8000",
+		Handler: router,
+	}
+
 	go func() {
 		log.Println("server starting")
 		if err := srv.ListenAndServe(); err != nil {
@@ -89,5 +71,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal(err)
 	}
+
 	log.Println("server stopped")
 }

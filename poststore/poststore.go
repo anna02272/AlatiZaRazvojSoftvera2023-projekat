@@ -1,9 +1,11 @@
 package poststore
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/config"
+	tracer "github.com/anna02272/AlatiZaRazvojSoftvera2023-projekat/tracer"
 	"github.com/hashicorp/consul/api"
 	"os"
 )
@@ -29,11 +31,14 @@ func New() (*PostStore, error) {
 	}, nil
 }
 
-func (ps *PostStore) AddConfiguration(config *config.Config) error {
+func (ps *PostStore) AddConfiguration(ctx context.Context, config *config.Config) error {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
 	kv := ps.cli.KV()
 
 	data, err := json.Marshal(config)
 	if err != nil {
+		tracer.LogError(span, err)
 		return err
 	}
 
@@ -42,18 +47,23 @@ func (ps *PostStore) AddConfiguration(config *config.Config) error {
 	p := &api.KVPair{Key: key, Value: data}
 	_, err = kv.Put(p, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return err
 	}
 
 	return nil
 }
 
-func (ps *PostStore) GetConfiguration(id, version string) (*config.Config, error) {
+func (ps *PostStore) GetConfiguration(ctx context.Context, id, version string) (*config.Config, error) {
+	span := tracer.StartSpanFromContext(ctx, "GetAll")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	key := "configurations/" + id + "/" + version
 	pair, _, err := kv.Get(key, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
@@ -64,29 +74,38 @@ func (ps *PostStore) GetConfiguration(id, version string) (*config.Config, error
 	config := &config.Config{}
 	err = json.Unmarshal(pair.Value, config)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
 	return config, nil
 }
 
-func (ps *PostStore) DeleteConfiguration(id, version string) error {
+func (ps *PostStore) DeleteConfiguration(ctx context.Context, id, version string) error {
+	span := tracer.StartSpanFromContext(ctx, "Delete")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	key := "configurations/" + id + "/" + version
 	_, err := kv.Delete(key, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return err
 	}
 
 	return nil
 }
-func (ps *PostStore) AddConfigurationGroup(configs []*config.Config) error {
+func (ps *PostStore) AddConfigurationGroup(ctx context.Context, configs []*config.Config) error {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	for _, c := range configs {
 		data, err := json.Marshal(c)
 		if err != nil {
+			tracer.LogError(span, err)
 			return err
 		}
 
@@ -94,6 +113,7 @@ func (ps *PostStore) AddConfigurationGroup(configs []*config.Config) error {
 		p := &api.KVPair{Key: key, Value: data}
 		_, err = kv.Put(p, nil)
 		if err != nil {
+			tracer.LogError(span, err)
 			return err
 		}
 
@@ -103,7 +123,10 @@ func (ps *PostStore) AddConfigurationGroup(configs []*config.Config) error {
 	return nil
 }
 
-func (ps *PostStore) GetConfigurationGroup(id, version string) ([]*config.Config, error) {
+func (ps *PostStore) GetConfigurationGroup(ctx context.Context, id, version string) ([]*config.Config, error) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	configs := make([]*config.Config, 0)
@@ -111,6 +134,7 @@ func (ps *PostStore) GetConfigurationGroup(id, version string) ([]*config.Config
 	keyPrefix := "groups/" + id + "/" + version + "/"
 	pairs, _, err := kv.List(keyPrefix, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
@@ -118,6 +142,7 @@ func (ps *PostStore) GetConfigurationGroup(id, version string) ([]*config.Config
 		config := &config.Config{}
 		err := json.Unmarshal(pair.Value, config)
 		if err != nil {
+			tracer.LogError(span, err)
 			return nil, err
 		}
 		configs = append(configs, config)
@@ -126,12 +151,16 @@ func (ps *PostStore) GetConfigurationGroup(id, version string) ([]*config.Config
 	return configs, nil
 }
 
-func (ps *PostStore) DeleteConfigurationGroup(id, version string) error {
+func (ps *PostStore) DeleteConfigurationGroup(ctx context.Context, id, version string) error {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	keyPrefix := "groups/" + id + "/" + version + "/"
 	_, err := kv.DeleteTree(keyPrefix, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return err
 	}
 
@@ -146,11 +175,15 @@ func (ps *PostStore) DeleteConfigurationGroup(id, version string) error {
 	return nil
 }
 
-func (ps *PostStore) ExtendConfigurationGroup(id, version string, newConfigs []*config.Config) error {
+func (ps *PostStore) ExtendConfigurationGroup(ctx context.Context, id, version string, newConfigs []*config.Config) error {
+	span := tracer.StartSpanFromContext(ctx, "Post")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	// find the group to be extended
-	groupConfigs, err := ps.GetConfigurationGroup(id, version)
+
+	groupConfigs, err := ps.GetConfigurationGroup(ctx, id, version)
 	if err != nil {
 		return err
 	}
@@ -158,6 +191,7 @@ func (ps *PostStore) ExtendConfigurationGroup(id, version string, newConfigs []*
 	for _, c := range newConfigs {
 		data, err := json.Marshal(c)
 		if err != nil {
+			tracer.LogError(span, err)
 			return err
 		}
 
@@ -165,6 +199,7 @@ func (ps *PostStore) ExtendConfigurationGroup(id, version string, newConfigs []*
 		p := &api.KVPair{Key: key, Value: data}
 		_, err = kv.Put(p, nil)
 		if err != nil {
+			tracer.LogError(span, err)
 			return err
 		}
 
@@ -175,7 +210,10 @@ func (ps *PostStore) ExtendConfigurationGroup(id, version string, newConfigs []*
 	return nil
 }
 
-func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString string) ([]*config.Config, error) {
+func (ps *PostStore) GetConfigurationGroupsByLabels(ctx context.Context, id, version, labelString string) ([]*config.Config, error) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	configs := make([]*config.Config, 0)
@@ -183,6 +221,7 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString str
 	keyPrefix := "groups/" + id + "/" + version + "/"
 	pairs, _, err := kv.List(keyPrefix, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
@@ -190,6 +229,7 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString str
 		config := &config.Config{}
 		err := json.Unmarshal(pair.Value, config)
 		if err != nil {
+			tracer.LogError(span, err)
 			return nil, err
 		}
 		if config.Labels == labelString {
@@ -199,11 +239,15 @@ func (ps *PostStore) GetConfigurationGroupsByLabels(id, version, labelString str
 
 	return configs, nil
 }
-func (ps *PostStore) GetConfigurationByKey(key string) (*config.Config, error) {
+func (ps *PostStore) GetConfigurationByKey(ctx context.Context, key string) (*config.Config, error) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	pair, _, err := kv.Get(key, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
@@ -214,17 +258,22 @@ func (ps *PostStore) GetConfigurationByKey(key string) (*config.Config, error) {
 	var config config.Config
 	err = json.Unmarshal(pair.Value, &config)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
 	return &config, nil
 }
 
-func (ps *PostStore) GetConfigurationGroupByKey(key string) ([]*config.Config, error) {
+func (ps *PostStore) GetConfigurationGroupByKey(ctx context.Context, key string) ([]*config.Config, error) {
+	span := tracer.StartSpanFromContext(ctx, "Get")
+	defer span.Finish()
+
 	kv := ps.cli.KV()
 
 	pairs, _, err := kv.List(key, nil)
 	if err != nil {
+		tracer.LogError(span, err)
 		return nil, err
 	}
 
@@ -237,6 +286,7 @@ func (ps *PostStore) GetConfigurationGroupByKey(key string) ([]*config.Config, e
 		var config config.Config
 		err = json.Unmarshal(pair.Value, &config)
 		if err != nil {
+			tracer.LogError(span, err)
 			return nil, err
 		}
 		configs = append(configs, &config)
