@@ -27,3 +27,4 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/alatizarazvojsoftvera2023-projekat-app:latest
+          working-directory: .
