@@ -20,9 +20,12 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push
-        uses:  mr-smithers-excellent/docker-build-push@v5
+        uses: mr-smithers-excellent/docker-build-push@v5
         with:
-          push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/alatizarazvojsoftvera2023-projekat-app:latest
+            image: alatizarazvojsoftvera2023-projekat-app:latest
+            registry: docker.io
+            username: ${{ secrets.DOCKERHUB_USERNAME }}
+            password: ${{ secrets.DOCKERHUB_TOKEN }}
+            tags: ${{ secrets.DOCKERHUB_USERNAME }}/alatizarazvojsoftvera2023-projekat-app:latest
 
 
