@@ -20,7 +20,7 @@ services:
       - "14268:14268"
       - "14250:14250"
   app:
-    build: .
+    image: domonjiana/alatizarazvojsoftvera2023-projekat-app:latest
     restart: always
     ports:
       - "8000:8000"
