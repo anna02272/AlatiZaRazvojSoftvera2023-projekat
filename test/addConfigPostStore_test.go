@@ -10,12 +10,10 @@ import (
 )
 
 func TestAddConfiguration(t *testing.T) {
-	// Create a new PostStore
 	ps, err := poststore.New()
 	assert.Nil(t, err)
 	assert.NotNil(t, ps)
 
-	// Create a test configuration
 	testConfig := &config.Config{
 		ID:      "test-id",
 		Version: "1",
@@ -23,13 +21,11 @@ func TestAddConfiguration(t *testing.T) {
 	}
 	fmt.Println("Adding configuration:", testConfig)
 
-	// Add the test configuration to the PostStore
 	err = ps.AddConfiguration(context.Background(), testConfig)
 	assert.Nil(t, err)
 
 	fmt.Println("Retrieving configuration with ID:", testConfig.ID, "and version:", testConfig.Version)
 
-	// Retrieve the added configuration from the PostStore
 	retrievedConfig, err := ps.GetConfiguration(context.Background(), testConfig.ID, testConfig.Version)
 	assert.Nil(t, err)
 	assert.NotNil(t, retrievedConfig)
