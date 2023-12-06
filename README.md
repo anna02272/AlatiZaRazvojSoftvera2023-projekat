@@ -9,7 +9,7 @@ Two auxiliary components maintain the system:
 - **Log and Trace Management Component:** Responsible for storing and reviewing logs and traces.
 - **Metrics Management Component:** Handles the storage and review of metrics.
 
-##Technologies: 
+## Technologies: 
 - Programming language Golang
 - Docker
 - Swagger
